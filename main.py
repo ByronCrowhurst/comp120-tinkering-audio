@@ -1,11 +1,11 @@
-import wave
-import struct
-import math
 import pygame
 from pygame.locals import *
 import sys
+import wave_class
+import os.path
 
-OUTPUT_FILENAME = "noise.wav"
+
+OUTPUT_FILENAME = "new-sound"
 LENGTH_OF_FILE_IN_SECONDS = 5
 CHANNEL_COUNT = 1
 SAMPLE_WIDTH = 2
@@ -16,65 +16,33 @@ COMPRESSION_NAME = 'not compressed'
 MAX_VOLUME = 32767  # How high/low the crest/trough will be. How loud the sound will be AMPLITUDE
 FREQUENCY = 261  # Hz How tightly packed each wave is.
 wave_types = {0: "sine", 1: "square", 2: "saw"}
-wave_intensity = {"none": 0, "low": 1, "medium": 2, "high": 3}
 
 
-def sound_gen():
-    noise_out = wave.open(OUTPUT_FILENAME, "w")
-    noise_out.setparams((CHANNEL_COUNT, SAMPLE_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH, COMPRESSION_TYPE, COMPRESSION_NAME))
-
+def new_sound_gen(sound_class, wave_type):
+    output_file_name = str(sound_class.output_filename + str(sound_class.id) + ".wav")
+    current_file_to_play = output_file_name
+    created_sound = sound_class.open_file(output_file_name)
+    created_sound.setparams((CHANNEL_COUNT, SAMPLE_WIDTH, SAMPLE_RATE, SAMPLE_LENGTH, COMPRESSION_TYPE, COMPRESSION_NAME))
     values = []
-    for i in range(0, SAMPLE_LENGTH):
-        packed_value = wave_gen(wave_types[1], wave_intensity["high"], i)
-
-        for j in range(0, CHANNEL_COUNT):
-            values.append(packed_value)
-    noise_out.writeframes(b''.join(values)) # writing the array in the file
-    noise_out.close()
-
-
-def wave_gen(wave_type, intensity, i):
-    value_list = []
-    if wave_type == "sine":
-        if intensity <= 0:
-            value = (math.sin(2.0 * math.pi * FREQUENCY * (i / SAMPLE_RATE)) / math.pi) * MAX_VOLUME
-            value_list.append(value)
-    elif wave_type == "square":
-        if intensity >= 0:
-            value = (math.sin(2.0 * math.pi * FREQUENCY * (i / SAMPLE_RATE)) / math.pi) * MAX_VOLUME
-            value_list.append(value)
-        if intensity >= 1:
-            value_two = (math.sin(3 * (2.0 * math.pi * FREQUENCY * (i / SAMPLE_RATE))) / (3 * math.pi)) * MAX_VOLUME
-            value_list.append(value_two)
-        if intensity >= 2:
-            value_three = (math.sin(5 * (2.0 * math.pi * FREQUENCY * (i / SAMPLE_RATE))) / (5 * math.pi)) * MAX_VOLUME
-            value_list.append(value_three)
-        if intensity >= 3:
-            value_four = (math.sin(7 * (2.0 * math.pi * FREQUENCY * (i / SAMPLE_RATE))) / (7 * math.pi)) * MAX_VOLUME
-            value_list.append(value_four)
-    elif wave_type == "saw":
-        if intensity >= 0:
-            value = (math.sin(2.0 * math.pi * FREQUENCY * (i / SAMPLE_RATE)) / -math.pi) * MAX_VOLUME
-            value_list.append(value)
-        if intensity >= 1:
-            value_two = (math.sin(2 * (2.0 * math.pi * FREQUENCY * (i / SAMPLE_RATE))) / (2 * math.pi)) * MAX_VOLUME
-            value_list.append(value_two)
-        if intensity >= 2:
-            value_three = (math.sin(-3 * (2.0 * math.pi * FREQUENCY * (i / SAMPLE_RATE))) / (-3 * math.pi)) * MAX_VOLUME
-            value_list.append(value_three)
-        if intensity >= 3:
-            value_four = (math.sin(4 * (2.0 * math.pi * FREQUENCY * (i / SAMPLE_RATE))) / (4 * math.pi)) * MAX_VOLUME
-            value_list.append(value_four)
-    value_sum = int(sum(value_list))
-    packed_values = struct.pack('h', value_sum)
-    return packed_values
+    for i in range(0, int(sound_class.sample_length)):
+        if wave_type == "sine":
+            print("sne")
+            created_wave = sound_class.sine_wave(sound_class.frequency, i, sound_class.sample_rate, sound_class.volume)
+        elif wave_type == "square":
+            created_wave = sound_class.square_wave(sound_class.frequency, i, sound_class.sample_rate)
+        elif wave_type == "saw":
+            created_wave = sound_class.saw_wave(sound_class.frequency, i, sound_class.sample_rate, sound_class.volume, 6)
+        for j in range(0, sound_class.channels):
+            values.append(created_wave)
+    created_sound.writeframes(b''.join(values))
+    sound_class.close_file(created_sound)
+    return current_file_to_play
 
 
 def main():
-    sound_gen()
     pygame.init()
     pygame.display.set_mode((250, 250), 0, 32)
-    sound = pygame.mixer.Sound('noise.wav')
+    current_file_to_play = ""
 
     while True:
         for event in pygame.event.get():
@@ -83,7 +51,25 @@ def main():
                 sys.exit()
             if event.type == KEYDOWN:
                 if event.key == K_p:
-                    sound.play()
+                    if os.path.isfile(current_file_to_play):
+                        current_sound = pygame.mixer.Sound(current_file_to_play)
+                        current_sound.play()
+                if event.key == K_w:
+                    current_file_to_play = new_sound_gen(
+                        wave_class.WaveClass("new-sound", LENGTH_OF_FILE_IN_SECONDS, CHANNEL_COUNT, SAMPLE_WIDTH,
+                                             SAMPLE_RATE, MAX_VOLUME, FREQUENCY), wave_types[0])
+                    print(current_file_to_play)
+                if event.key == K_a:
+                    current_file_to_play = new_sound_gen(
+                        wave_class.WaveClass("new-sound", LENGTH_OF_FILE_IN_SECONDS, CHANNEL_COUNT, SAMPLE_WIDTH,
+                                             SAMPLE_RATE, MAX_VOLUME, FREQUENCY), wave_types[1])
+                if event.key == K_d:
+                    current_file_to_play = new_sound_gen(
+                        wave_class.WaveClass("new-sound", LENGTH_OF_FILE_IN_SECONDS, CHANNEL_COUNT, SAMPLE_WIDTH,
+                                             SAMPLE_RATE, MAX_VOLUME, FREQUENCY), wave_types[2])
+                if event.key == K_s:
+                    pass
 
 
-main()
+if __name__ == "__main__":
+    main()
