@@ -2,11 +2,10 @@ import wave
 import struct
 import math
 from even_or_odd import *
-import pygame
-from pygame.locals import *
+
 
 """
-THIS CLASS IS IN PROGRESS. FEEL FREE TO IGNORE.
+Wave class handles opening new wave files and generating waves.
 """
 
 
@@ -68,7 +67,6 @@ class WaveClass:
         :param sample_rate:     Rate at which the wave is sampled
         :return:                1 or -1
         """
-        # Creates a square wave
         value = 0
         if (math.sin(2.0 * math.pi * frequency * (index_position / sample_rate)) * self.volume) > 0:
             value += self.volume
@@ -95,6 +93,3 @@ class WaveClass:
             new_wave += (math.sin(multiplier * 2.0 * math.pi * frequency * (index_position / sample_rate)) / (multiplier * math.pi))* volume
         packed_values = struct.pack('h', int(new_wave))
         return packed_values
-
-    def combine_waves(self):
-        pass
